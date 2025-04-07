@@ -7,6 +7,7 @@ import Calendar from './pages/Calendar';
 import Contact from './pages/Contact';
 import Livestream from './pages/Livestream';
 import PWAPrompt from './components/PWAPrompt';
+import OfflineIndicator from './components/OfflineIndicator';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
       </Routes>
       <PWAPrompt />
+      <OfflineIndicator />
     </Router>
   );
 }
