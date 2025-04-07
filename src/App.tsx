@@ -6,6 +6,7 @@ import Events from './pages/Events';
 import Calendar from './pages/Calendar';
 import Contact from './pages/Contact';
 import Livestream from './pages/Livestream';
+import PWAPrompt from './components/PWAPrompt';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/contact" element={<Contact />} />
       </Routes>
+      <PWAPrompt />
     </Router>
   );
 }
