@@ -187,7 +187,7 @@ function Calendar() {
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <iframe
-              src="https://rcce.churchsuite.com/embed/calendar"
+              src="https://rcce.churchsuite.co.uk/embed/calendar?preview=true"
               width="100%"
               height="800"
               frameBorder="0"
