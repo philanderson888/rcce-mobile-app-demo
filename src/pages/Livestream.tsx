@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Navigation from '../components/Navigation';
 import { Calendar, Play } from 'lucide-react';
 import { YOUTUBE_CONFIG } from '../config/youtube';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface LiveStreamStatus {
   isLive: boolean;
@@ -13,6 +14,30 @@ function Livestream() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [liveStatus, setLiveStatus] = useState<LiveStreamStatus>({ isLive: false });
+  const { currentTheme } = useTheme();
+
+  const getThemeStyles = () => {
+    if (currentTheme === 'grey') {
+      return {
+        page: 'bg-french',
+        header: 'bg-gunmetal text-lavender shadow-lg',
+        card: 'bg-gunmetal',
+        text: 'text-platinum',
+        link: 'text-uranian hover:text-lavender',
+        button: 'text-platinum bg-gunmetal hover:bg-french border-french',
+        errorCard: 'bg-gunmetal text-red-400'
+      };
+    }
+    return {
+      page: 'bg-gray-50',
+      header: 'bg-white shadow-sm',
+      card: 'bg-white',
+      text: 'text-gray-600',
+      link: 'text-blue-600 hover:text-blue-800',
+      button: 'text-gray-700 bg-white hover:bg-gray-50 border-gray-300',
+      errorCard: 'bg-white text-red-600'
+    };
+  };
 
   const checkLiveStream = async () => {
     try {
@@ -25,22 +50,15 @@ function Livestream() {
       const channelId = YOUTUBE_CONFIG.channelId;
       const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}`;
       
-      console.log('Checking livestream status...');
       const response = await fetch(url);
       
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('YouTube API Error:', errorData);
         throw new Error(errorData.error?.message || 'Failed to check livestream status');
       }
 
       const data = await response.json();
-      console.log('Livestream response:', data);
-      
       const isLive = data.items && data.items.length > 0;
-      if (isLive) {
-        console.log('Found live stream:', data.items[0]);
-      }
       
       setLiveStatus({
         isLive,
@@ -49,7 +67,6 @@ function Livestream() {
       setError(null);
       setIsLoading(false);
     } catch (err) {
-      console.error('Error checking livestream:', err);
       setError(err instanceof Error ? err.message : 'Failed to check livestream status');
       setIsLoading(false);
     }
@@ -61,36 +78,38 @@ function Livestream() {
     return () => clearInterval(interval);
   }, []);
 
+  const styles = getThemeStyles();
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen ${styles.page}`}>
       <Navigation />
-      <header className="bg-white shadow-sm">
+      <header className={styles.header}>
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Livestream</h1>
+          <h1 className={`text-3xl font-bold ${styles.text}`}>Livestream</h1>
         </div>
       </header>
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         {isLoading ? (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <p className="text-gray-600">Checking livestream status...</p>
+          <div className={`${styles.card} rounded-xl shadow-sm p-6`}>
+            <p className={styles.text}>Checking livestream status...</p>
           </div>
         ) : error ? (
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className={`${styles.card} rounded-xl shadow-sm p-6`}>
             <div className="text-center py-12">
-              <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">No Live Stream Available</h2>
-              <p className="text-gray-600 mb-6">
-                Please check our <Link to="/calendar" className="text-blue-600 hover:text-blue-800 font-medium">calendar</Link> and{' '}
-                <Link to="/events" className="text-blue-600 hover:text-blue-800 font-medium">events</Link> pages for upcoming services and church meetings.
+              <Calendar className={`w-16 h-16 ${styles.text} mx-auto mb-4`} />
+              <h2 className={`text-2xl font-semibold ${styles.text} mb-2`}>No Live Stream Available</h2>
+              <p className={`${styles.text} mb-6`}>
+                Please check our <Link to="/calendar" className={styles.link}>calendar</Link> and{' '}
+                <Link to="/events" className={styles.link}>events</Link> pages for upcoming services and church meetings.
               </p>
               <p className="text-red-600 text-sm mb-2">Error checking livestream status</p>
-              <p className="text-gray-500 text-sm">{error}</p>
+              <p className={`${styles.text} text-sm`}>{error}</p>
             </div>
           </div>
         ) : liveStatus.isLive ? (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className={`${styles.card} rounded-xl shadow-sm p-6`}>
               <div className="aspect-video">
                 <iframe
                   src={`https://www.youtube.com/embed/${liveStatus.videoId}?autoplay=1`}
@@ -109,16 +128,16 @@ function Livestream() {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className={`${styles.card} rounded-xl shadow-sm p-6`}>
             <div className="text-center py-12">
-              <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">No Live Stream Available</h2>
-              <p className="text-gray-600 mb-6">
+              <Calendar className={`w-16 h-16 ${styles.text} mx-auto mb-4`} />
+              <h2 className={`text-2xl font-semibold ${styles.text} mb-2`}>No Live Stream Available</h2>
+              <p className={`${styles.text} mb-6`}>
                 There is no live stream at present. Please check our{' '}
-                <Link to="/calendar" className="text-blue-600 hover:text-blue-800 font-medium">calendar</Link> and{' '}
-                <Link to="/events" className="text-blue-600 hover:text-blue-800 font-medium">events</Link> pages for upcoming services and church meetings.
+                <Link to="/calendar" className={styles.link}>calendar</Link> and{' '}
+                <Link to="/events" className={styles.link}>events</Link> pages for upcoming services and church meetings.
               </p>
-              <div className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 cursor-not-allowed">
+              <div className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md cursor-not-allowed ${styles.button}`}>
                 <Play className="w-5 h-5 mr-2" />
                 Livestream Not Available
               </div>

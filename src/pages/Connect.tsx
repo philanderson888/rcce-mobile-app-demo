@@ -1,52 +1,94 @@
 import { Facebook, Instagram, Youtube, Twitter, Globe } from 'lucide-react';
 import Navigation from '../components/Navigation';
+import { useTheme } from '../contexts/ThemeContext';
 
 function Connect() {
+  const { currentTheme } = useTheme();
+
+  const getThemeStyles = () => {
+    if (currentTheme === 'grey') {
+      return {
+        page: 'bg-french',
+        header: 'bg-gunmetal text-lavender shadow-lg',
+        card: 'bg-gunmetal',
+        text: 'text-platinum',
+        title: 'text-lavender',
+        socialCard: 'border-french hover:border-lavender',
+        socialText: 'text-lavender',
+        socialHover: {
+          facebook: 'hover:text-uranian',
+          instagram: 'hover:text-uranian',
+          youtube: 'hover:text-uranian',
+          twitter: 'hover:text-uranian',
+          website: 'hover:text-uranian'
+        }
+      };
+    }
+    return {
+      page: 'bg-gray-50',
+      header: 'bg-white shadow-sm',
+      card: 'bg-white',
+      text: 'text-gray-600',
+      title: 'text-gray-900',
+      socialCard: 'border-gray-200 hover:border-gray-300',
+      socialText: 'text-gray-900',
+      socialHover: {
+        facebook: 'hover:text-blue-600',
+        instagram: 'hover:text-pink-600',
+        youtube: 'hover:text-red-600',
+        twitter: 'hover:text-gray-800',
+        website: 'hover:text-blue-600'
+      }
+    };
+  };
+
   const socialLinks = [
     {
       name: 'Website',
       icon: <Globe className="w-8 h-8" />,
       url: 'https://rccenfield.org',
-      color: 'hover:text-blue-600',
+      hoverKey: 'website'
     },
     {
       name: 'Facebook',
       icon: <Facebook className="w-8 h-8" />,
       url: 'https://www.facebook.com/rccenfield',
-      color: 'hover:text-blue-600',
+      hoverKey: 'facebook'
     },
     {
       name: 'Instagram',
       icon: <Instagram className="w-8 h-8" />,
       url: 'https://www.instagram.com/rccenfield',
-      color: 'hover:text-pink-600',
+      hoverKey: 'instagram'
     },
     {
       name: 'YouTube',
       icon: <Youtube className="w-8 h-8" />,
       url: 'https://www.youtube.com/c/RevivalChristianChurchofEnfield',
-      color: 'hover:text-red-600',
+      hoverKey: 'youtube'
     },
     {
       name: 'X (Twitter)',
       icon: <Twitter className="w-8 h-8" />,
       url: 'https://x.com/rccenfield',
-      color: 'hover:text-gray-800',
+      hoverKey: 'twitter'
     },
   ];
 
+  const styles = getThemeStyles();
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen ${styles.page}`}>
       <Navigation />
-      <header className="bg-white shadow-sm">
+      <header className={styles.header}>
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Connect With Us</h1>
+          <h1 className={`text-3xl font-bold ${styles.text}`}>Connect With Us</h1>
         </div>
       </header>
       
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl shadow-sm p-8">
-          <p className="text-xl text-gray-600 mb-8 text-center">
+        <div className={`${styles.card} rounded-xl shadow-sm p-8`}>
+          <p className={`text-xl ${styles.text} mb-8 text-center`}>
             Stay connected with Revival Christian Church of Enfield through our social media channels
           </p>
           
@@ -57,15 +99,15 @@ function Connect() {
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`flex flex-col items-center p-6 rounded-xl border border-gray-200 transition-all duration-300 hover:shadow-lg ${link.color}`}
+                className={`flex flex-col items-center p-6 rounded-xl border transition-all duration-300 hover:shadow-lg ${styles.socialCard}`}
               >
-                {link.icon}
-                <span className="mt-4 text-lg font-medium text-gray-900">{link.name}</span>
+                <div className={styles.socialHover[link.hoverKey]}>{link.icon}</div>
+                <span className={`mt-4 text-lg font-medium ${styles.socialText}`}>{link.name}</span>
               </a>
             ))}
           </div>
           
-          <p className="text-center mt-8 text-gray-600">
+          <p className={`text-center mt-8 ${styles.text}`}>
             Follow us to stay updated with our latest events, sermons, and community activities
           </p>
         </div>

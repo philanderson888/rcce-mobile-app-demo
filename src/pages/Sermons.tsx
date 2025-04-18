@@ -4,6 +4,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ShareButton from '../components/ShareButton';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { YOUTUBE_CONFIG } from '../config/youtube';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface YouTubeVideo {
   snippet: {
@@ -28,6 +29,38 @@ function Sermons() {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { currentTheme } = useTheme();
+
+  const getThemeStyles = () => {
+    if (currentTheme === 'grey') {
+      return {
+        page: 'bg-french',
+        header: 'bg-gunmetal text-lavender shadow-lg',
+        card: 'bg-gunmetal',
+        text: 'text-platinum',
+        title: 'text-lavender',
+        date: 'text-french',
+        button: {
+          primary: 'bg-gunmetal text-lavender hover:bg-french border-french',
+          secondary: 'bg-gunmetal text-platinum hover:bg-french border-french'
+        },
+        error: 'text-red-400'
+      };
+    }
+    return {
+      page: 'bg-gray-50',
+      header: 'bg-white shadow-sm',
+      card: 'bg-white',
+      text: 'text-gray-600',
+      title: 'text-gray-900',
+      date: 'text-gray-500',
+      button: {
+        primary: 'bg-red-600 text-white hover:bg-red-700 border-transparent',
+        secondary: 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+      },
+      error: 'text-red-600'
+    };
+  };
 
   const fetchChannelVideos = async () => {
     try {
@@ -87,18 +120,20 @@ function Sermons() {
     });
   };
 
+  const styles = getThemeStyles();
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
+    <div className={`min-h-screen ${styles.page} pb-20 md:pb-0`}>
       <Navigation />
-      <header className="bg-white shadow-sm">
+      <header className={styles.header}>
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Sermons</h1>
+          <h1 className={`text-3xl font-bold ${styles.text}`}>Sermons</h1>
         </div>
       </header>
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         {isRefreshing && (
-          <div className="text-center text-sm text-gray-600 mb-4">
+          <div className={`text-center text-sm ${styles.text} mb-4`}>
             Refreshing...
           </div>
         )}
@@ -106,7 +141,7 @@ function Sermons() {
         {apiStatus === 'loading' && <LoadingSpinner />}
         
         {apiStatus === 'error' && (
-          <div className="bg-white rounded-xl shadow-sm p-6 text-red-600">
+          <div className={`${styles.card} rounded-xl shadow-sm p-6 ${styles.error}`}>
             <p>Failed to load sermons</p>
             <p className="mt-2 text-sm">{errorMessage}</p>
           </div>
@@ -115,7 +150,7 @@ function Sermons() {
         {apiStatus === 'success' && (
           <div className="space-y-6">
             {videos.map((video) => (
-              <div key={video.snippet.resourceId.videoId} className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div key={video.snippet.resourceId.videoId} className={`${styles.card} rounded-xl shadow-sm overflow-hidden`}>
                 <div className="flex flex-col md:flex-row">
                   <div className="md:w-64 flex-shrink-0">
                     <img
@@ -126,13 +161,13 @@ function Sermons() {
                     />
                   </div>
                   <div className="p-6">
-                    <div className="text-sm text-gray-500 mb-2">
+                    <div className={`text-sm ${styles.date} mb-2`}>
                       {formatDate(video.snippet.publishedAt)}
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                    <h2 className={`text-xl font-semibold ${styles.title} mb-2`}>
                       {video.snippet.title}
                     </h2>
-                    <p className="text-gray-600 mb-4 line-clamp-2">
+                    <p className={`${styles.text} mb-4 line-clamp-2`}>
                       {video.snippet.description}
                     </p>
                     <div className="flex space-x-4">
@@ -140,7 +175,7 @@ function Sermons() {
                         href={`https://www.youtube.com/watch?v=${video.snippet.resourceId.videoId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 min-w-[44px] min-h-[44px]"
+                        className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 min-w-[44px] min-h-[44px] ${styles.button.primary}`}
                       >
                         Watch on YouTube
                       </a>

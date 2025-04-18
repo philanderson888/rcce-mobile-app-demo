@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Navigation from '../components/Navigation';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Calendar as CalendarIcon, MapPin, Clock, ExternalLink, LayoutGrid, List } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Image {
   thumbnail: string;
@@ -32,6 +33,210 @@ interface Event {
   image: Image;
   location: Location;
   url: string;
+}
+
+function Calendar() {
+  const [view, setView] = useState<'custom' | 'embed'>('custom');
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { currentTheme } = useTheme();
+
+  const getThemeStyles = () => {
+    if (currentTheme === 'grey') {
+      return {
+        page: 'bg-french',
+        header: 'bg-gunmetal text-lavender shadow-lg',
+        card: 'bg-gunmetal',
+        text: 'text-platinum',
+        title: 'text-lavender',
+        button: {
+          active: 'bg-gunmetal text-lavender border-gunmetal',
+          inactive: 'bg-gunmetal text-platinum border-french hover:border-lavender'
+        },
+        error: 'bg-gunmetal border-red-400 text-red-400',
+        icon: 'text-platinum',
+        link: 'text-uranian hover:text-lavender'
+      };
+    }
+    return {
+      page: 'bg-gray-50',
+      header: 'bg-white shadow-sm',
+      card: 'bg-white',
+      text: 'text-gray-600',
+      title: 'text-gray-900',
+      button: {
+        active: 'bg-gray-900 text-white border-gray-900',
+        inactive: 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+      },
+      error: 'bg-yellow-50 border-yellow-400 text-yellow-700',
+      icon: 'text-gray-500',
+      link: 'text-blue-600 hover:text-blue-800'
+    };
+  };
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch('https://rcce.churchsuite.com/-/calendar/8e403f2a-abc8-4f3c-b807-2760583bccf9/json');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch events');
+        }
+
+        const data = await response.json();
+        
+        // Filter events for the next 60 days
+        const now = new Date();
+        const sixtyDaysFromNow = new Date(now.getTime() + (60 * 24 * 60 * 60 * 1000));
+        
+        const filteredEvents = data.events.filter((event: Event) => {
+          const eventDate = new Date(event.starts_at);
+          return eventDate <= sixtyDaysFromNow;
+        });
+
+        setEvents(filteredEvents);
+      } catch (err) {
+        console.error('Error fetching events:', err);
+        setError('Failed to load events. Showing fallback data.');
+        setEvents(generateStaticEvents());
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const styles = getThemeStyles();
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  return (
+    <div className={`min-h-screen ${styles.page}`}>
+      <Navigation />
+      <header className={styles.header}>
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex justify-between items-center">
+            <h1 className={`text-3xl font-bold ${styles.title}`}>Calendar</h1>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setView('custom')}
+                className={`inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium ${
+                  view === 'custom' ? styles.button.active : styles.button.inactive
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4 mr-2" />
+                Custom View
+              </button>
+              <button
+                onClick={() => setView('embed')}
+                className={`inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium ${
+                  view === 'embed' ? styles.button.active : styles.button.inactive
+                }`}
+              >
+                <List className="w-4 h-4 mr-2" />
+                Embedded View
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {view === 'custom' ? (
+          <div className="space-y-6">
+            {loading && <LoadingSpinner />}
+            
+            {error && (
+              <div className={`border-l-4 p-4 mb-4 ${styles.error}`}>
+                <div className="flex">
+                  <div className="ml-3">
+                    <p className="text-sm">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!loading && events.map((event) => (
+              <div key={event.identifier} className={`${styles.card} rounded-xl shadow-sm overflow-hidden`}>
+                <div className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className={`text-xl font-semibold ${styles.title} mb-2`}>
+                        {event.name}
+                      </h2>
+                      <div className="space-y-2">
+                        <div className={`flex items-center ${styles.text}`}>
+                          <CalendarIcon className={`w-5 h-5 mr-2 ${styles.icon}`} />
+                          <span>{formatDate(event.starts_at)}</span>
+                        </div>
+                        <div className={`flex items-center ${styles.text}`}>
+                          <Clock className={`w-5 h-5 mr-2 ${styles.icon}`} />
+                          <span>
+                            {event.all_day ? 
+                              'All Day' : 
+                              `${formatTime(event.starts_at)} - ${formatTime(event.ends_at)}`
+                            }
+                          </span>
+                        </div>
+                        {event.location && event.location.address && (
+                          <div className={`flex items-center ${styles.text}`}>
+                            <MapPin className={`w-5 h-5 mr-2 ${styles.icon}`} />
+                            <span>{event.location.address}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <a
+                      href={event.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium ${styles.button.inactive}`}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Details
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={`${styles.card} rounded-xl shadow-sm overflow-hidden`}>
+            <iframe
+              src="https://rcce.churchsuite.com/embed/calendar"
+              width="100%"
+              height="800"
+              frameBorder="0"
+              scrolling="yes"
+              style={{ borderWidth: 0 }}
+              title="Church Calendar"
+            />
+          </div>
+        )}
+      </main>
+    </div>
+  );
 }
 
 // Static event data as fallback
@@ -109,177 +314,5 @@ const generateStaticEvents = () => {
 
   return events;
 };
-
-function Calendar() {
-  const [view, setView] = useState<'custom' | 'embed'>('custom');
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch('https://rcce.churchsuite.com/-/calendar/8e403f2a-abc8-4f3c-b807-2760583bccf9/json');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch events');
-        }
-
-        const data = await response.json();
-        
-        // Filter events for the next 60 days
-        const now = new Date();
-        const sixtyDaysFromNow = new Date(now.getTime() + (60 * 24 * 60 * 60 * 1000));
-        
-        const filteredEvents = data.events.filter((event: Event) => {
-          const eventDate = new Date(event.starts_at);
-          return eventDate <= sixtyDaysFromNow;
-        });
-
-        setEvents(filteredEvents);
-      } catch (err) {
-        console.error('Error fetching events:', err);
-        setError('Failed to load events. Showing fallback data.');
-        setEvents(generateStaticEvents());
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
-  }, []);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setView('custom')}
-                className={`inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium ${
-                  view === 'custom'
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <LayoutGrid className="w-4 h-4 mr-2" />
-                Custom View
-              </button>
-              <button
-                onClick={() => setView('embed')}
-                className={`inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium ${
-                  view === 'embed'
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <List className="w-4 h-4 mr-2" />
-                Embedded View
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-      
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {view === 'custom' ? (
-          <div className="space-y-6">
-            {loading && <LoadingSpinner />}
-            
-            {error && (
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <p className="text-sm text-yellow-700">{error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!loading && events.map((event) => (
-              <div key={event.identifier} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                        {event.name}
-                      </h2>
-                      <div className="space-y-2">
-                        <div className="flex items-center text-gray-500">
-                          <CalendarIcon className="w-5 h-5 mr-2" />
-                          <span>{formatDate(event.starts_at)}</span>
-                        </div>
-                        <div className="flex items-center text-gray-500">
-                          <Clock className="w-5 h-5 mr-2" />
-                          <span>
-                            {event.all_day ? 
-                              'All Day' : 
-                              `${formatTime(event.starts_at)} - ${formatTime(event.ends_at)}`
-                            }
-                          </span>
-                        </div>
-                        {event.location && event.location.address && (
-                          <div className="flex items-center text-gray-500">
-                            <MapPin className="w-5 h-5 mr-2" />
-                            <span>{event.location.address}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <a
-                      href={event.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Details
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <iframe
-              src="https://rcce.churchsuite.com/embed/calendar"
-              width="100%"
-              height="800"
-              frameBorder="0"
-              scrolling="yes"
-              style={{ borderWidth: 0 }}
-              title="Church Calendar"
-            />
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
 
 export default Calendar;
